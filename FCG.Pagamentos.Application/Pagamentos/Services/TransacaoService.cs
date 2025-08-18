@@ -44,6 +44,12 @@ public class TransacaoService : ITransacaoService
         return transacoes.Select(MapearParaResponse);
     }
 
+    public async Task<IEnumerable<TransacaoResponse>> ObterPorUsuarioAsync(Guid usuarioId)
+    {
+        var transacoes = await _transacaoRepository.ObterPorUsuarioAsync(usuarioId);
+        return transacoes.Select(MapearParaResponse);
+    }
+
     public async Task<TransacaoResponse> AtualizarAsync(Guid id, AtualizarTransacaoRequest request)
     {
         var transacao = await _transacaoRepository.ObterPorIdAsync(id);
@@ -78,13 +84,12 @@ public class TransacaoService : ITransacaoService
         if (transacao.Status != StatusTransacao.Pendente)
             throw new InvalidOperationException("Transação não está pendente");
 
-        // Simula processamento de pagamento
         transacao.Status = StatusTransacao.Processando;
         transacao.DataProcessamento = DateTime.UtcNow;
         transacao.TentativasProcessamento++;
 
-        // Simula sucesso no pagamento (em produção, seria integração com gateway de pagamento)
-        await Task.Delay(1000); // Simula tempo de processamento
+  
+        await Task.Delay(1000);
 
         transacao.Status = StatusTransacao.Aprovada;
         transacao.DataConfirmacao = DateTime.UtcNow;

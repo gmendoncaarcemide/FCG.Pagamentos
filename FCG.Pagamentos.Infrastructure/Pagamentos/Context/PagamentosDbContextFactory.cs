@@ -8,7 +8,7 @@ namespace FCG.Pagamentos.Infrastructure
         public PagamentosDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<PagamentosDbContext>();
-            optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=FCG_Pagamentos;Trusted_Connection=true;");
+            optionsBuilder.UseNpgsql("Host=db.elcvczlnnzbgcpsbowkg.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=Fiap@1234");
 
             return new PagamentosDbContext(optionsBuilder.Options);
         }

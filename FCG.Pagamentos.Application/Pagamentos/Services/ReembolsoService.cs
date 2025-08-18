@@ -100,9 +100,8 @@ public class ReembolsoService : IReembolsoService
         if (reembolso.Status != StatusReembolso.Solicitado)
             throw new InvalidOperationException("Apenas reembolsos solicitados podem ser processados");
 
-        // Simular processamento do reembolso
         var random = new Random();
-        var sucesso = random.Next(1, 11) <= 8; // 80% de chance de sucesso
+        var sucesso = random.Next(1, 11) <= 8;
 
         if (sucesso)
         {

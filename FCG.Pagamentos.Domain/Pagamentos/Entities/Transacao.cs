@@ -18,8 +18,6 @@ public class Transacao : Entity
     public string? ErroProcessamento { get; set; }
     public int TentativasProcessamento { get; set; } = 0;
     public DateTime? ProximaTentativa { get; set; }
-    
-    // Propriedades adicionais referenciadas nos serviços
     public string Referencia { get; set; } = string.Empty;
     public string DetalhesPagamento { get; set; } = string.Empty;
 }

@@ -3,8 +3,8 @@ using System;
 using FCG.Pagamentos.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -17,61 +17,61 @@ namespace FCG.Pagamentos.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.8")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("FCG.Pagamentos.Domain.Pagamentos.Entities.Reembolso", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("Ativo")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("CodigoReembolso")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DataAtualizacao")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DataConclusao")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DataProcessamento")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("DataSolicitacao")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Motivo")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Observacoes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("TransacaoId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("TransacaoId1")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("ValorReembolso")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.HasKey("Id");
 
@@ -86,71 +86,71 @@ namespace FCG.Pagamentos.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("Ativo")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("CodigoAutorizacao")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("CodigoTransacao")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("DataAtualizacao")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DataConfirmacao")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DataProcessamento")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DetalhesPagamento")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("ErroProcessamento")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("JogoId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Moeda")
                         .IsRequired()
                         .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
+                        .HasColumnType("character varying(3)");
 
                     b.Property<string>("Observacoes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ProximaTentativa")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Referencia")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("Status")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("TentativasProcessamento")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("TipoPagamento")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("UsuarioId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Valor")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric(18,2)");
 
                     b.HasKey("Id");
 

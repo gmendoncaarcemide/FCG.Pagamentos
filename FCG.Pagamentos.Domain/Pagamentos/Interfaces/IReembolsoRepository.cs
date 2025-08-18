@@ -12,5 +12,5 @@ public interface IReembolsoRepository
     Task<IEnumerable<Reembolso>> ObterPorPeriodoAsync(DateTime dataInicio, DateTime dataFim);
     Task<Reembolso> AdicionarAsync(Reembolso reembolso);
     Task<Reembolso> AtualizarAsync(Reembolso reembolso);
-    Task<bool> ExcluirAsync(Guid id); // Alterado de Task para Task<bool>
+    Task<bool> ExcluirAsync(Guid id);
 } 

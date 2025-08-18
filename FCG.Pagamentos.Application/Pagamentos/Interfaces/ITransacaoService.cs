@@ -8,6 +8,7 @@ public interface ITransacaoService
     Task<TransacaoResponse> CriarAsync(CriarTransacaoRequest request);
     Task<TransacaoResponse?> ObterPorIdAsync(Guid id);
     Task<IEnumerable<TransacaoResponse>> ObterTodosAsync();
+    Task<IEnumerable<TransacaoResponse>> ObterPorUsuarioAsync(Guid usuarioId);
     Task<TransacaoResponse> AtualizarAsync(Guid id, AtualizarTransacaoRequest request);
     Task ExcluirAsync(Guid id);
     Task<TransacaoResponse> ProcessarPagamentoAsync(ProcessarPagamentoRequest request);

@@ -98,6 +98,6 @@ public class BuscarTransacoesRequest
     public decimal? ValorMaximo { get; set; }
     public int Pagina { get; set; } = 1;
     public int TamanhoPagina { get; set; } = 20;
-    public string? Ordenacao { get; set; } // "data", "valor", "status"
+    public string? Ordenacao { get; set; }
     public bool OrdemDecrescente { get; set; } = true;
 } 

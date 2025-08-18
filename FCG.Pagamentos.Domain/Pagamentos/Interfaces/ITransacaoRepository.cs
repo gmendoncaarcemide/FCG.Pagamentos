@@ -14,5 +14,5 @@ public interface ITransacaoRepository
     Task<IEnumerable<Transacao>> ObterPorTipoPagamentoAsync(TipoPagamento tipoPagamento);
     Task<Transacao> AdicionarAsync(Transacao transacao);
     Task<Transacao> AtualizarAsync(Transacao transacao);
-    Task<bool> ExcluirAsync(Guid id); // Alterado de Task para Task<bool>
+    Task<bool> ExcluirAsync(Guid id);
 } 

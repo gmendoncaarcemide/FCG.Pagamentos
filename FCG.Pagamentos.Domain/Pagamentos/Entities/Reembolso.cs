@@ -14,8 +14,6 @@ public class Reembolso : Entity
     public DateTime? DataConclusao { get; set; }
     public string? Observacoes { get; set; }
     public string? CodigoReembolso { get; set; }
-    
-    // Propriedade de navegação
     public virtual Transacao Transacao { get; set; } = null!;
 }
 
