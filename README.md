@@ -215,24 +215,4 @@ FGC_PAGAMENTOS/
 - [x] Validações de Entrada
 - [x] Tratamento de Erros
 
-## 🤝 Contribuição
-
-1. Clone o repositório
-2. Configure o ambiente conforme instruções acima
-3. Execute as migrations
-4. Teste a aplicação
-5. Faça suas alterações
-6. Execute os testes
-7. Submeta um Pull Request
-
-## 📞 Suporte
-
-Para dúvidas ou problemas:
-- Verifique os logs em `/logs/`
-- Consulte a documentação do Swagger
-- Verifique a conexão com o Supabase
-- Execute `dotnet build` para verificar erros de compilação
-
----
-
-**FCG Pagamentos** - Microserviço de Pagamentos | FIAP Cloud Games 2024
+**FCG Pagamentos** - Microserviço de Pagamentos | FIAP Cloud Games 2025
