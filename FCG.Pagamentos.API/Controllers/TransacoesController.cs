@@ -16,8 +16,11 @@ public class TransacoesController : ControllerBase
         _service = service;
     }
 
+    /// <summary>
+    /// Criar e processar uma nova transação de pagamento
+    /// </summary>
     [HttpPost]
-    [ProducesResponseType(typeof(object), 201)]
+    [ProducesResponseType(typeof(TransacaoResponse), 201)]
     [ProducesResponseType(typeof(IEnumerable<ValidationResult>), 400)]
     [ProducesResponseType(500)]
     public async Task<IActionResult> CriarTransacao([FromBody] CriarTransacaoRequest request)
@@ -42,8 +45,11 @@ public class TransacoesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Obtém uma transação por ID
+    /// </summary>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(object), 200)]
+    [ProducesResponseType(typeof(TransacaoResponse), 200)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
     public async Task<IActionResult> ObterPorId(Guid id)
@@ -62,24 +68,11 @@ public class TransacoesController : ControllerBase
         }
     }
 
-    [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<object>), 200)]
-    [ProducesResponseType(500)]
-    public async Task<IActionResult> ObterTodos()
-    {
-        try
-        {
-            var transacoes = await _service.ObterTodosAsync();
-            return Ok(transacoes);
-        }
-        catch (Exception ex)
-        {
-            return Problem($"Erro interno: {ex.Message}");
-        }
-    }
-
+    /// <summary>
+    /// Obtém transações por usuário
+    /// </summary>
     [HttpGet("usuario/{usuarioId:guid}")]
-    [ProducesResponseType(typeof(IEnumerable<object>), 200)]
+    [ProducesResponseType(typeof(IEnumerable<TransacaoResponse>), 200)]
     [ProducesResponseType(500)]
     public async Task<IActionResult> ObterPorUsuario(Guid usuarioId)
     {
@@ -94,28 +87,18 @@ public class TransacoesController : ControllerBase
         }
     }
 
-    [HttpPut("{id:guid}")]
-    [ProducesResponseType(typeof(object), 200)]
-    [ProducesResponseType(typeof(IEnumerable<ValidationResult>), 400)]
-    [ProducesResponseType(404)]
+    /// <summary>
+    /// Obtém transações por jogo
+    /// </summary>
+    [HttpGet("jogo/{jogoId:guid}")]
+    [ProducesResponseType(typeof(IEnumerable<TransacaoResponse>), 200)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> Atualizar(Guid id, [FromBody] AtualizarTransacaoRequest request)
+    public async Task<IActionResult> ObterPorJogo(Guid jogoId)
     {
-        var validationContext = new ValidationContext(request);
-        var validationResults = new List<ValidationResult>();
-        if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-            return BadRequest(validationResults);
-        
         try
         {
-            var transacao = await _service.AtualizarAsync(id, request);
-            return Ok(transacao);
-        }
-        catch (InvalidOperationException ex)
-        {
-            if (ex.Message.Contains("não encontrada"))
-                return NotFound(ex.Message);
-            return BadRequest(ex.Message);
+            var transacoes = await _service.ObterPorJogoAsync(jogoId);
+            return Ok(transacoes);
         }
         catch (Exception ex)
         {
@@ -123,71 +106,11 @@ public class TransacoesController : ControllerBase
         }
     }
 
-    [HttpDelete("{id:guid}")]
-    [ProducesResponseType(204)]
-    [ProducesResponseType(500)]
-    public async Task<IActionResult> Excluir(Guid id)
-    {
-        try
-        {
-            await _service.ExcluirAsync(id);
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return Problem($"Erro interno: {ex.Message}");
-        }
-    }
-
-    [HttpPost("processar")]
-    [ProducesResponseType(typeof(object), 200)]
-    [ProducesResponseType(typeof(IEnumerable<ValidationResult>), 400)]
-    [ProducesResponseType(500)]
-    public async Task<IActionResult> ProcessarPagamento([FromBody] ProcessarPagamentoRequest request)
-    {
-        var validationContext = new ValidationContext(request);
-        var validationResults = new List<ValidationResult>();
-        if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-            return BadRequest(validationResults);
-        
-        try
-        {
-            var transacao = await _service.ProcessarPagamentoAsync(request);
-            return Ok(transacao);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return Problem($"Erro interno: {ex.Message}");
-        }
-    }
-
-    [HttpPost("{id:guid}/cancelar")]
-    [ProducesResponseType(typeof(object), 200)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(500)]
-    public async Task<IActionResult> CancelarTransacao(Guid id)
-    {
-        try
-        {
-            var transacao = await _service.CancelarTransacaoAsync(id);
-            return Ok(transacao);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return Problem($"Erro interno: {ex.Message}");
-        }
-    }
-
+    /// <summary>
+    /// Busca transações com filtros
+    /// </summary>
     [HttpPost("buscar")]
-    [ProducesResponseType(typeof(IEnumerable<object>), 200)]
+    [ProducesResponseType(typeof(IEnumerable<TransacaoResponse>), 200)]
     [ProducesResponseType(typeof(IEnumerable<ValidationResult>), 400)]
     [ProducesResponseType(500)]
     public async Task<IActionResult> Buscar([FromBody] BuscarTransacoesRequest request)
@@ -208,19 +131,31 @@ public class TransacoesController : ControllerBase
         }
     }
 
-    [HttpGet("referencia/{referencia}")]
-    [ProducesResponseType(typeof(object), 200)]
+    /// <summary>
+    /// Atualiza status e observações de uma transação
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(TransacaoResponse), 200)]
+    [ProducesResponseType(typeof(IEnumerable<ValidationResult>), 400)]
     [ProducesResponseType(404)]
     [ProducesResponseType(500)]
-    public async Task<IActionResult> ObterPorReferencia(string referencia)
+    public async Task<IActionResult> Atualizar(Guid id, [FromBody] AtualizarTransacaoRequest request)
     {
+        var validationContext = new ValidationContext(request);
+        var validationResults = new List<ValidationResult>();
+        if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+            return BadRequest(validationResults);
+        
         try
         {
-            var transacao = await _service.ObterPorReferenciaAsync(referencia);
-            if (transacao == null)
-                return NotFound($"Transação com referência {referencia} não encontrada");
-            
+            var transacao = await _service.AtualizarAsync(id, request);
             return Ok(transacao);
+        }
+        catch (InvalidOperationException ex)
+        {
+            if (ex.Message.Contains("não encontrada"))
+                return NotFound(ex.Message);
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {

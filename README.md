@@ -1,6 +1,6 @@
-# 🏦 FCG Pagamentos - Microserviço de Pagamentos
+# 🏦 FCG Pagamentos - Microserviço de Pagamentos Brasileiro
 
-Microserviço responsável pelo processamento e status de transações de pagamento do sistema FCG (FIAP Cloud Games).
+Microserviço responsável pelo processamento e status de transações de pagamento do sistema FCG (FIAP Cloud Games), otimizado para o mercado brasileiro com suporte a PIX, cartões de crédito/débito e boleto bancário.
 
 ## 🚀 Como Iniciar o Projeto FCG Pagamentos
 
@@ -74,8 +74,7 @@ A API será iniciada em:
 FGC_PAGAMENTOS/
 ├── FCG.Pagamentos.API/           # Camada de API e Controllers
 │   ├── Controllers/              # Controllers REST
-│   │   ├── TransacoesController.cs
-│   │   └── ReembolsosController.cs
+│   │   └── TransacoesController.cs
 │   ├── Program.cs               # Configuração da aplicação
 │   └── appsettings.json        # Configurações
 ├── FCG.Pagamentos.Application/   # Regras de negócio e serviços
@@ -107,31 +106,41 @@ FGC_PAGAMENTOS/
 
 ## 📡 Endpoints da API
 
-### 💳 **Transações**
+### 💳 **Transações de Pagamento Simplificadas**
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `POST` | `/api/transacoes` | Criar nova transação |
-| `GET` | `/api/transacoes` | Listar todas as transações |
+| `POST` | `/api/transacoes` | Criar e processar transação (unificado) |
 | `GET` | `/api/transacoes/{id}` | Obter transação por ID |
 | `GET` | `/api/transacoes/usuario/{usuarioId}` | Obter transações por usuário |
-| `PUT` | `/api/transacoes/{id}` | Atualizar transação |
-| `DELETE` | `/api/transacoes/{id}` | Excluir transação |
-| `POST` | `/api/transacoes/processar` | Processar pagamento |
-| `POST` | `/api/transacoes/{id}/cancelar` | Cancelar transação |
-| `POST` | `/api/transacoes/buscar` | Buscar com filtros |
-| `GET` | `/api/transacoes/referencia/{referencia}` | Obter por referência |
+| `GET` | `/api/transacoes/jogo/{jogoId}` | Obter transações por jogo |
+| `POST` | `/api/transacoes/buscar` | Buscar com filtros (data, jogo) |
+| `PUT` | `/api/transacoes/{id}` | Atualizar status e observações |
 
-### 💰 **Reembolsos**
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| `POST` | `/api/reembolsos` | Criar novo reembolso |
-| `GET` | `/api/reembolsos` | Listar todos os reembolsos |
-| `GET` | `/api/reembolsos/{id}` | Obter reembolso por ID |
-| `GET` | `/api/reembolsos/usuario/{usuarioId}` | Obter reembolsos por usuário |
-| `GET` | `/api/reembolsos/transacao/{transacaoId}` | Obter reembolsos por transação |
-| `PUT` | `/api/reembolsos/{id}/status` | Atualizar status do reembolso |
-| `POST` | `/api/reembolsos/{id}/cancelar` | Cancelar reembolso |
-| `POST` | `/api/reembolsos/{id}/processar` | Processar reembolso |
+### 🇧🇷 **Tipos de Pagamento Suportados**
+
+#### **PIX (Pagamento Instantâneo)**
+- **Taxa de Sucesso**: 90%
+- **Dados Necessários**: Chave PIX, Nome do beneficiário
+- **Processamento**: Instantâneo
+- **Código de Autorização**: Formato `PIX{6 dígitos}`
+
+#### **Cartão de Crédito**
+- **Taxa de Sucesso**: 80%
+- **Dados Necessários**: Número, Nome do titular, Validade, CVV, Parcelas
+- **Processamento**: 1-3 segundos
+- **Código de Autorização**: Formato `CC{6 dígitos}`
+
+#### **Cartão de Débito**
+- **Taxa de Sucesso**: 80%
+- **Dados Necessários**: Número, Nome do titular, Validade, CVV
+- **Processamento**: 1-3 segundos
+- **Código de Autorização**: Formato `CD{6 dígitos}`
+
+#### **Boleto Bancário**
+- **Taxa de Sucesso**: 70%
+- **Dados Necessários**: CPF/CNPJ, Nome, Endereço completo, CEP, Cidade, Estado
+- **Processamento**: Imediato (geração do boleto)
+- **Código de Autorização**: Formato `BOL{6 dígitos}`
 
 ## 🗄️ Modelo de Dados
 
@@ -142,21 +151,16 @@ FGC_PAGAMENTOS/
 - `UsuarioId` (UUID) - ID do usuário
 - `JogoId` (UUID) - ID do jogo
 - `Valor` (Decimal) - Valor da transação
-- `Moeda` (String) - Moeda (ex: BRL)
-- `Status` (Enum) - Status da transação
-- `TipoPagamento` (Enum) - Tipo de pagamento
-- `Referencia` (String) - Referência única
+- `Status` (Enum) - Status da transação (Pendente, Processando, Aprovada, Recusada, Cancelada, Falha)
+- `TipoPagamento` (Enum) - Tipo de pagamento (CartaoCredito, CartaoDebito, PIX, Boleto)
+- `Referencia` (String) - Referência única para consulta
+- `CodigoAutorizacao` (String) - Código de autorização do processador
+- `CodigoTransacao` (String) - Código da transação
+- `DataProcessamento` (DateTime) - Data do processamento
+- `DataConfirmacao` (DateTime) - Data da confirmação
+- `Observacoes` (String) - Observações da transação
+- `ErroProcessamento` (String) - Erro em caso de falha
 - `DataCriacao` (DateTime) - Data de criação
-- `DataAtualizacao` (DateTime) - Data de atualização
-
-#### **Reembolsos**
-- `Id` (UUID) - Identificador único
-- `TransacaoId` (UUID) - ID da transação relacionada
-- `UsuarioId` (UUID) - ID do usuário
-- `ValorReembolso` (Decimal) - Valor do reembolso
-- `Motivo` (String) - Motivo do reembolso
-- `Status` (Enum) - Status do reembolso
-- `DataSolicitacao` (DateTime) - Data da solicitação
 
 ## 🔄 Migração de SQL Server para PostgreSQL
 
@@ -201,19 +205,25 @@ FGC_PAGAMENTOS/
 
 ### ✅ **Concluído**
 - [x] Migração para PostgreSQL (Supabase)
-- [x] Implementação de Controllers
+- [x] Implementação de Controllers simplificados
 - [x] Configuração de Dependency Injection
 - [x] Migrations aplicadas no Supabase
 - [x] API funcionando com Swagger
 - [x] Logs estruturados com Serilog
+- [x] Suporte a pagamentos brasileiros (PIX, Cartão, Boleto)
+- [x] Simplificação máxima do microserviço
+- [x] Criação e processamento unificados em um único POST
+- [x] Remoção de campos desnecessários (moeda, tentativas, etc.)
 
-### 🔄 **Funcionalidades**
-- [x] CRUD de Transações
-- [x] CRUD de Reembolsos
-- [x] Processamento de Pagamentos
-- [x] Busca e Filtros
-- [x] Validações de Entrada
-- [x] Tratamento de Erros
+### 🔄 **Funcionalidades Simplificadas**
+- [x] CRUD de Transações simplificado
+- [x] Processamento de Pagamentos Brasileiros unificado
+- [x] Validações específicas por tipo de pagamento
+- [x] Códigos de autorização por tipo de pagamento
+- [x] Tratamento de Erros específicos
+- [x] Simulação de processamento com taxas de sucesso realistas
+- [x] Busca por usuário, jogo e período
+- [x] Atualização simples de status e observações
 
 ## 🤝 Contribuição
 

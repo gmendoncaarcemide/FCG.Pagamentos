@@ -9,7 +9,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddPagamentosService(this IServiceCollection services)
     {
         services.AddScoped<ITransacaoService, TransacaoService>();
-        services.AddScoped<IReembolsoService, ReembolsoService>();
         
         return services;
     }

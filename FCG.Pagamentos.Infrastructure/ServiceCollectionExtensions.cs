@@ -16,7 +16,6 @@ public static class ServiceCollectionExtensions
             options.UseNpgsql(connectionString));
 
         services.AddScoped<ITransacaoRepository, TransacaoRepository>();
-        services.AddScoped<IReembolsoRepository, ReembolsoRepository>();
 
         return services;
     }

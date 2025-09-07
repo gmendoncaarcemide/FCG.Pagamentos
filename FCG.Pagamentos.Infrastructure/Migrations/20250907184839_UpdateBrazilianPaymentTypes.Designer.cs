@@ -3,6 +3,7 @@ using System;
 using FCG.Pagamentos.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FCG.Pagamentos.Infrastructure.Migrations
 {
     [DbContext(typeof(PagamentosDbContext))]
-    partial class PagamentosDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250907184839_UpdateBrazilianPaymentTypes")]
+    partial class UpdateBrazilianPaymentTypes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -49,14 +52,27 @@ namespace FCG.Pagamentos.Infrastructure.Migrations
                     b.Property<DateTime?>("DataProcessamento")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DetalhesPagamento")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<string>("ErroProcessamento")
                         .HasColumnType("text");
 
                     b.Property<Guid>("JogoId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Moeda")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
                     b.Property<string>("Observacoes")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("ProximaTentativa")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Referencia")
                         .IsRequired()
@@ -64,6 +80,9 @@ namespace FCG.Pagamentos.Infrastructure.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TentativasProcessamento")
                         .HasColumnType("integer");
 
                     b.Property<int>("TipoPagamento")
@@ -77,8 +96,6 @@ namespace FCG.Pagamentos.Infrastructure.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("JogoId");
 
                     b.HasIndex("Referencia")
                         .IsUnique();

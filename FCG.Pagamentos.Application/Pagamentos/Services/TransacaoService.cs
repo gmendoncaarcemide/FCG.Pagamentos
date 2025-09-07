@@ -16,17 +16,37 @@ public class TransacaoService : ITransacaoService
 
     public async Task<TransacaoResponse> CriarAsync(CriarTransacaoRequest request)
     {
+        // Valida dados específicos do tipo de pagamento
+        ValidarDadosPagamento(request.TipoPagamento, request);
+
         var transacao = new Transacao
         {
             UsuarioId = request.UsuarioId,
             JogoId = request.JogoId,
             Valor = request.Valor,
-            Moeda = request.Moeda,
             TipoPagamento = request.TipoPagamento,
-            Status = StatusTransacao.Pendente,
+            Status = StatusTransacao.Processando,
             Referencia = Guid.NewGuid().ToString("N").Substring(0, 16).ToUpper(),
-            DetalhesPagamento = request.Observacoes ?? "Transação criada"
+            DataProcessamento = DateTime.UtcNow
         };
+
+        // Processa o pagamento imediatamente
+        var random = new Random();
+        var sucesso = ProcessarTipoPagamento(request.TipoPagamento, random);
+
+        if (sucesso)
+        {
+            transacao.Status = StatusTransacao.Aprovada;
+            transacao.DataConfirmacao = DateTime.UtcNow;
+            transacao.CodigoAutorizacao = GerarCodigoAutorizacao(request.TipoPagamento);
+            transacao.CodigoTransacao = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
+            transacao.Observacoes = GerarObservacoesPagamento(request.TipoPagamento, request);
+        }
+        else
+        {
+            transacao.Status = StatusTransacao.Recusada;
+            transacao.ErroProcessamento = GerarErroProcessamento(request.TipoPagamento);
+        }
 
         var transacaoCriada = await _transacaoRepository.AdicionarAsync(transacao);
         return MapearParaResponse(transacaoCriada);
@@ -38,15 +58,29 @@ public class TransacaoService : ITransacaoService
         return transacao != null ? MapearParaResponse(transacao) : null;
     }
 
-    public async Task<IEnumerable<TransacaoResponse>> ObterTodosAsync()
-    {
-        var transacoes = await _transacaoRepository.ObterTodosAsync();
-        return transacoes.Select(MapearParaResponse);
-    }
-
     public async Task<IEnumerable<TransacaoResponse>> ObterPorUsuarioAsync(Guid usuarioId)
     {
         var transacoes = await _transacaoRepository.ObterPorUsuarioAsync(usuarioId);
+        return transacoes.Select(MapearParaResponse);
+    }
+
+    public async Task<IEnumerable<TransacaoResponse>> ObterPorJogoAsync(Guid jogoId)
+    {
+        var transacoes = await _transacaoRepository.ObterPorJogoAsync(jogoId);
+        return transacoes.Select(MapearParaResponse);
+    }
+
+    public async Task<IEnumerable<TransacaoResponse>> BuscarAsync(BuscarTransacoesRequest request)
+    {
+        IEnumerable<Transacao> transacoes;
+
+        if (request.JogoId.HasValue)
+            transacoes = await _transacaoRepository.ObterPorJogoAsync(request.JogoId.Value);
+        else if (request.DataInicio.HasValue && request.DataFim.HasValue)
+            transacoes = await _transacaoRepository.ObterPorPeriodoAsync(request.DataInicio.Value, request.DataFim.Value);
+        else
+            transacoes = await _transacaoRepository.ObterTodosAsync();
+
         return transacoes.Select(MapearParaResponse);
     }
 
@@ -57,89 +91,105 @@ public class TransacaoService : ITransacaoService
             throw new InvalidOperationException("Transação não encontrada");
 
         if (request.Status.HasValue) transacao.Status = request.Status.Value;
-        if (request.CodigoAutorizacao != null) transacao.CodigoAutorizacao = request.CodigoAutorizacao;
-        if (request.CodigoTransacao != null) transacao.CodigoTransacao = request.CodigoTransacao;
-        if (request.DataProcessamento.HasValue) transacao.DataProcessamento = request.DataProcessamento.Value;
-        if (request.DataConfirmacao.HasValue) transacao.DataConfirmacao = request.DataConfirmacao.Value;
         if (request.Observacoes != null) transacao.Observacoes = request.Observacoes;
-        if (request.ErroProcessamento != null) transacao.ErroProcessamento = request.ErroProcessamento;
-        if (request.TentativasProcessamento.HasValue) transacao.TentativasProcessamento = request.TentativasProcessamento.Value;
-        if (request.ProximaTentativa.HasValue) transacao.ProximaTentativa = request.ProximaTentativa.Value;
 
         var transacaoAtualizada = await _transacaoRepository.AtualizarAsync(transacao);
         return MapearParaResponse(transacaoAtualizada);
     }
 
-    public async Task ExcluirAsync(Guid id)
+    private static void ValidarDadosPagamento(TipoPagamento tipoPagamento, CriarTransacaoRequest request)
     {
-        await _transacaoRepository.ExcluirAsync(id);
+        switch (tipoPagamento)
+        {
+            case TipoPagamento.CartaoCredito:
+            case TipoPagamento.CartaoDebito:
+                if (request.DadosCartao == null)
+                    throw new InvalidOperationException("Dados do cartão são obrigatórios para pagamento com cartão");
+                
+                if (string.IsNullOrWhiteSpace(request.DadosCartao.NumeroCartao))
+                    throw new InvalidOperationException("Número do cartão é obrigatório");
+                if (string.IsNullOrWhiteSpace(request.DadosCartao.NomeTitular))
+                    throw new InvalidOperationException("Nome do titular é obrigatório");
+                if (string.IsNullOrWhiteSpace(request.DadosCartao.DataValidade))
+                    throw new InvalidOperationException("Data de validade é obrigatória");
+                if (string.IsNullOrWhiteSpace(request.DadosCartao.CVV))
+                    throw new InvalidOperationException("CVV é obrigatório");
+                break;
+                
+            case TipoPagamento.PIX:
+                if (request.DadosPIX == null)
+                    throw new InvalidOperationException("Dados PIX são obrigatórios para pagamento PIX");
+                
+                if (string.IsNullOrWhiteSpace(request.DadosPIX.ChavePIX))
+                    throw new InvalidOperationException("Chave PIX é obrigatória");
+                break;
+                
+            case TipoPagamento.Boleto:
+                if (request.DadosBoleto == null)
+                    throw new InvalidOperationException("Dados do boleto são obrigatórios para pagamento com boleto");
+                
+                if (string.IsNullOrWhiteSpace(request.DadosBoleto.CpfCnpj))
+                    throw new InvalidOperationException("CPF/CNPJ é obrigatório");
+                if (string.IsNullOrWhiteSpace(request.DadosBoleto.NomePagador))
+                    throw new InvalidOperationException("Nome do pagador é obrigatório");
+                if (string.IsNullOrWhiteSpace(request.DadosBoleto.Endereco))
+                    throw new InvalidOperationException("Endereço é obrigatório");
+                if (string.IsNullOrWhiteSpace(request.DadosBoleto.CEP))
+                    throw new InvalidOperationException("CEP é obrigatório");
+                if (string.IsNullOrWhiteSpace(request.DadosBoleto.Cidade))
+                    throw new InvalidOperationException("Cidade é obrigatória");
+                if (string.IsNullOrWhiteSpace(request.DadosBoleto.Estado))
+                    throw new InvalidOperationException("Estado é obrigatório");
+                break;
+        }
     }
 
-    public async Task<TransacaoResponse> ProcessarPagamentoAsync(ProcessarPagamentoRequest request)
+    private static bool ProcessarTipoPagamento(TipoPagamento tipoPagamento, Random random)
     {
-        var transacao = await _transacaoRepository.ObterPorIdAsync(request.TransacaoId);
-        if (transacao == null)
-            throw new InvalidOperationException("Transação não encontrada");
-
-        if (transacao.Status != StatusTransacao.Pendente)
-            throw new InvalidOperationException("Transação não está pendente");
-
-        transacao.Status = StatusTransacao.Processando;
-        transacao.DataProcessamento = DateTime.UtcNow;
-        transacao.TentativasProcessamento++;
-
-  
-        await Task.Delay(1000);
-
-        transacao.Status = StatusTransacao.Aprovada;
-        transacao.DataConfirmacao = DateTime.UtcNow;
-        transacao.CodigoAutorizacao = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
-        transacao.CodigoTransacao = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
-
-        var transacaoProcessada = await _transacaoRepository.AtualizarAsync(transacao);
-        return MapearParaResponse(transacaoProcessada);
+        return tipoPagamento switch
+        {
+            TipoPagamento.PIX => random.Next(1, 11) <= 9, // 90% sucesso PIX
+            TipoPagamento.CartaoCredito => random.Next(1, 11) <= 8, // 80% sucesso cartão crédito
+            TipoPagamento.CartaoDebito => random.Next(1, 11) <= 8, // 80% sucesso cartão débito
+            TipoPagamento.Boleto => random.Next(1, 11) <= 7, // 70% sucesso boleto
+            _ => false
+        };
     }
 
-    public async Task<TransacaoResponse> CancelarTransacaoAsync(Guid id)
+    private static string GerarCodigoAutorizacao(TipoPagamento tipoPagamento)
     {
-        var transacao = await _transacaoRepository.ObterPorIdAsync(id);
-        if (transacao == null)
-            throw new InvalidOperationException("Transação não encontrada");
-
-        if (transacao.Status == StatusTransacao.Cancelada)
-            throw new InvalidOperationException("Transação já está cancelada");
-
-        transacao.Status = StatusTransacao.Cancelada;
-        transacao.Observacoes = "Transação cancelada pelo usuário";
-
-        var transacaoCancelada = await _transacaoRepository.AtualizarAsync(transacao);
-        return MapearParaResponse(transacaoCancelada);
+        return tipoPagamento switch
+        {
+            TipoPagamento.PIX => $"PIX{Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper()}",
+            TipoPagamento.CartaoCredito => $"CC{Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper()}",
+            TipoPagamento.CartaoDebito => $"CD{Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper()}",
+            TipoPagamento.Boleto => $"BOL{Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper()}",
+            _ => Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()
+        };
     }
 
-    public async Task<IEnumerable<TransacaoResponse>> BuscarAsync(BuscarTransacoesRequest request)
+    private static string GerarObservacoesPagamento(TipoPagamento tipoPagamento, CriarTransacaoRequest request)
     {
-        IEnumerable<Transacao> transacoes;
-
-        if (request.UsuarioId.HasValue)
-            transacoes = await _transacaoRepository.ObterPorUsuarioAsync(request.UsuarioId.Value);
-        else if (request.JogoId.HasValue)
-            transacoes = await _transacaoRepository.ObterPorJogoAsync(request.JogoId.Value);
-        else if (request.Status.HasValue)
-            transacoes = await _transacaoRepository.ObterPorStatusAsync(request.Status.Value);
-        else if (request.TipoPagamento.HasValue)
-            transacoes = await _transacaoRepository.ObterPorTipoPagamentoAsync(request.TipoPagamento.Value);
-        else if (request.DataInicio.HasValue && request.DataFim.HasValue)
-            transacoes = await _transacaoRepository.ObterPorPeriodoAsync(request.DataInicio.Value, request.DataFim.Value);
-        else
-            transacoes = await _transacaoRepository.ObterTodosAsync();
-
-        return transacoes.Select(MapearParaResponse);
+        return tipoPagamento switch
+        {
+            TipoPagamento.PIX => $"PIX processado - Chave: {request.DadosPIX?.ChavePIX}",
+            TipoPagamento.CartaoCredito => $"Cartão de crédito - Parcelas: {request.DadosCartao?.Parcelas ?? 1}",
+            TipoPagamento.CartaoDebito => "Cartão de débito processado",
+            TipoPagamento.Boleto => $"Boleto gerado - CPF/CNPJ: {request.DadosBoleto?.CpfCnpj}",
+            _ => "Pagamento processado"
+        };
     }
 
-    public async Task<TransacaoResponse?> ObterPorReferenciaAsync(string referencia)
+    private static string GerarErroProcessamento(TipoPagamento tipoPagamento)
     {
-        var transacao = await _transacaoRepository.ObterPorReferenciaAsync(referencia);
-        return transacao != null ? MapearParaResponse(transacao) : null;
+        return tipoPagamento switch
+        {
+            TipoPagamento.PIX => "Erro no processamento PIX - Chave inválida ou indisponível",
+            TipoPagamento.CartaoCredito => "Cartão de crédito recusado - Verifique os dados ou limite",
+            TipoPagamento.CartaoDebito => "Cartão de débito recusado - Saldo insuficiente",
+            TipoPagamento.Boleto => "Erro na geração do boleto - Dados inválidos",
+            _ => "Erro no processamento do pagamento"
+        };
     }
 
     private static TransacaoResponse MapearParaResponse(Transacao transacao)
@@ -150,7 +200,6 @@ public class TransacaoService : ITransacaoService
             UsuarioId = transacao.UsuarioId,
             JogoId = transacao.JogoId,
             Valor = transacao.Valor,
-            Moeda = transacao.Moeda,
             Status = transacao.Status,
             TipoPagamento = transacao.TipoPagamento,
             CodigoAutorizacao = transacao.CodigoAutorizacao,
@@ -159,10 +208,8 @@ public class TransacaoService : ITransacaoService
             DataConfirmacao = transacao.DataConfirmacao,
             Observacoes = transacao.Observacoes,
             ErroProcessamento = transacao.ErroProcessamento,
-            TentativasProcessamento = transacao.TentativasProcessamento,
-            ProximaTentativa = transacao.ProximaTentativa,
-            DataCriacao = transacao.DataCriacao,
-            DataAtualizacao = transacao.DataAtualizacao
+            Referencia = transacao.Referencia,
+            DataCriacao = transacao.DataCriacao
         };
     }
-} 
+}

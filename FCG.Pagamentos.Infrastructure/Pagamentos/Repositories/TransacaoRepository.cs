@@ -11,12 +11,6 @@ public class TransacaoRepository : Repository<Transacao>, ITransacaoRepository
     {
     }
 
-    public async Task<Transacao?> ObterPorReferenciaAsync(string referencia)
-    {
-        return await _dbSet
-            .FirstOrDefaultAsync(t => t.Referencia == referencia && t.Ativo);
-    }
-
     public async Task<IEnumerable<Transacao>> ObterPorUsuarioAsync(Guid usuarioId)
     {
         return await _dbSet
@@ -33,26 +27,10 @@ public class TransacaoRepository : Repository<Transacao>, ITransacaoRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Transacao>> ObterPorStatusAsync(StatusTransacao status)
-    {
-        return await _dbSet
-            .Where(t => t.Status == status && t.Ativo)
-            .OrderByDescending(t => t.DataCriacao)
-            .ToListAsync();
-    }
-
     public async Task<IEnumerable<Transacao>> ObterPorPeriodoAsync(DateTime dataInicio, DateTime dataFim)
     {
         return await _dbSet
             .Where(t => t.DataCriacao >= dataInicio && t.DataCriacao <= dataFim && t.Ativo)
-            .OrderByDescending(t => t.DataCriacao)
-            .ToListAsync();
-    }
-
-    public async Task<IEnumerable<Transacao>> ObterPorTipoPagamentoAsync(TipoPagamento tipoPagamento)
-    {
-        return await _dbSet
-            .Where(t => t.TipoPagamento == tipoPagamento && t.Ativo)
             .OrderByDescending(t => t.DataCriacao)
             .ToListAsync();
     }
