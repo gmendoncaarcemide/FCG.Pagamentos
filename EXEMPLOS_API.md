@@ -1,4 +1,4 @@
-# 🇧🇷 Exemplos de Uso da API - Pagamentos Brasileiros Simplificados
+# 🇧🇷 Exemplos de Uso da API - Pagamentos
 
 ## 📋 Pré-requisitos
 
@@ -138,58 +138,6 @@ Content-Type: application/json
 {
   "status": 3,
   "observacoes": "Pagamento confirmado pelo cliente"
-}
-```
-
-## 📊 Respostas da API
-
-### Transação Criada (201)
-```json
-{
-  "id": "456e7890-e89b-12d3-a456-426614174001",
-  "usuarioId": "123e4567-e89b-12d3-a456-426614174000",
-  "jogoId": "987fcdeb-51a2-43d1-b789-123456789abc",
-  "valor": 99.90,
-  "moeda": "BRL",
-  "status": 1,
-  "tipoPagamento": 3,
-  "referencia": "ABC123DEF456",
-  "dataCriacao": "2024-09-07T18:48:39.123Z"
-}
-```
-
-### Pagamento Processado com Sucesso (200)
-```json
-{
-  "id": "456e7890-e89b-12d3-a456-426614174001",
-  "usuarioId": "123e4567-e89b-12d3-a456-426614174000",
-  "jogoId": "987fcdeb-51a2-43d1-b789-123456789abc",
-  "valor": 99.90,
-  "moeda": "BRL",
-  "status": 3,
-  "tipoPagamento": 3,
-  "codigoAutorizacao": "PIX123456",
-  "codigoTransacao": "TXN789ABC123",
-  "dataProcessamento": "2024-09-07T18:48:40.123Z",
-  "dataConfirmacao": "2024-09-07T18:48:40.456Z",
-  "observacoes": "PIX processado - Chave: usuario@email.com",
-  "referencia": "ABC123DEF456"
-}
-```
-
-### Pagamento Recusado (200)
-```json
-{
-  "id": "456e7890-e89b-12d3-a456-426614174002",
-  "usuarioId": "123e4567-e89b-12d3-a456-426614174000",
-  "jogoId": "987fcdeb-51a2-43d1-b789-123456789abc",
-  "valor": 199.90,
-  "moeda": "BRL",
-  "status": 4,
-  "tipoPagamento": 1,
-  "dataProcessamento": "2024-09-07T18:48:40.123Z",
-  "erroProcessamento": "Cartão de crédito recusado - Verifique os dados ou limite",
-  "referencia": "ABC123DEF456"
 }
 ```
 
