@@ -1,4 +1,4 @@
-# 🇧🇷 Exemplos de Uso da API - Pagamentos
+# Pagamentos
 
 ## 📋 Pré-requisitos
 
