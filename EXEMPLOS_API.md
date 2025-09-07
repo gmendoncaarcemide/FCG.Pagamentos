@@ -1,7 +1,5 @@
 # 🇧🇷 Exemplos de Uso da API - Pagamentos Brasileiros Simplificados
 
-Este documento contém exemplos práticos de como usar a API de pagamentos simplificada com os diferentes métodos de pagamento brasileiros.
-
 ## 📋 Pré-requisitos
 
 - API rodando em `https://localhost:44371`
@@ -215,43 +213,6 @@ Content-Type: application/json
 | 3 | PIX | PIX |
 | 4 | Boleto | Boleto Bancário |
 
-## 🔧 Testando com cURL
-
-### Criar Transação PIX
-```bash
-curl -X POST "https://localhost:44371/api/transacoes" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "usuarioId": "123e4567-e89b-12d3-a456-426614174000",
-    "jogoId": "987fcdeb-51a2-43d1-b789-123456789abc",
-    "valor": 99.90,
-    "tipoPagamento": 3,
-    "moeda": "BRL"
-  }'
-```
-
-### Processar PIX
-```bash
-curl -X POST "https://localhost:44371/api/transacoes/processar" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "transacaoId": "456e7890-e89b-12d3-a456-426614174001",
-    "dadosPIX": {
-      "chavePIX": "usuario@email.com",
-      "nomeBeneficiario": "João Silva"
-    }
-  }'
-```
-
-## 📝 Notas Importantes
-
-1. **Validação**: Todos os campos obrigatórios são validados
-2. **Simulação**: O processamento é simulado com taxas de sucesso realistas
-3. **Referência**: Cada transação recebe uma referência única para consulta
-4. **Códigos**: Códigos de autorização são gerados automaticamente
-5. **Logs**: Todas as operações são logadas para auditoria
-6. **Segurança**: Dados sensíveis não são armazenados permanentemente
-
 ---
 
-**FCG Pagamentos** - Microserviço de Pagamentos Brasileiro | FIAP Cloud Games 2024
+**FCG Pagamentos** - Microserviço de Pagamentos | FIAP Cloud Games 2024
