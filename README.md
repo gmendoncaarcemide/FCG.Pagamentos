@@ -1,15 +1,19 @@
-# 🏦 FCG Pagamentos - Microserviço de Pagamentos Brasileiro
+# 🏦 FCG Pagamentos
 
-Microserviço responsável pelo processamento e status de transações de pagamento do sistema FCG (FIAP Cloud Games), otimizado para o mercado brasileiro com suporte a PIX, cartões de crédito/débito e boleto bancário.
+Microserviço responsável pelo processamento e gerenciamento de transações de pagamento do sistema **FIAP Cloud Games**.  
+Suporta **PIX, cartão de crédito/débito e boleto bancário**.
 
-## 🚀 Como Iniciar o Projeto FCG Pagamentos
+---
+
+## 🚀 Como rodar o projeto
 
 ### ✅ Pré-requisitos
-- **.NET 8 SDK** instalado
+- **.NET 8 SDK**
 - **PostgreSQL** (via Supabase)
-- **EF Core CLI** instalado globalmente:
+- **EF Core CLI**:
   ```bash
   dotnet tool install --global dotnet-ef
+
   ```
 
 ### 📦 Restauração de Pacotes
@@ -52,20 +56,6 @@ Para gerar uma nova migration:
 cd FCG.Pagamentos.API
 dotnet ef migrations add NomeDaMigration --project ../FCG.Pagamentos.Infrastructure --startup-project .
 ```
-
-### 🔄 Executando a Aplicação
-
-Com o banco configurado, execute a API:
-
-```bash
-cd FCG.Pagamentos.API
-dotnet run
-```
-
-A API será iniciada em:
-- **HTTPS**: https://localhost:61824
-- **HTTP**: http://localhost:61825
-- **Swagger**: http://localhost:61825/swagger
 
 ## 🏗️ Arquitetura
 
@@ -116,37 +106,25 @@ FGC_PAGAMENTOS/
 | `POST` | `/api/transacoes/buscar` | Buscar com filtros (data, jogo) |
 | `PUT` | `/api/transacoes/{id}` | Atualizar status e observações |
 
-### 🇧🇷 **Tipos de Pagamento Suportados**
+### 🇧🇷 **Tipos de Pagamento**
 
 #### **PIX (Pagamento Instantâneo)**
-- **Taxa de Sucesso**: 90%
 - **Dados Necessários**: Chave PIX, Nome do beneficiário
-- **Processamento**: Instantâneo
-- **Código de Autorização**: Formato `PIX{6 dígitos}`
-
+- 
 #### **Cartão de Crédito**
-- **Taxa de Sucesso**: 80%
 - **Dados Necessários**: Número, Nome do titular, Validade, CVV, Parcelas
-- **Processamento**: 1-3 segundos
-- **Código de Autorização**: Formato `CC{6 dígitos}`
 
 #### **Cartão de Débito**
-- **Taxa de Sucesso**: 80%
 - **Dados Necessários**: Número, Nome do titular, Validade, CVV
-- **Processamento**: 1-3 segundos
-- **Código de Autorização**: Formato `CD{6 dígitos}`
-
+  
 #### **Boleto Bancário**
-- **Taxa de Sucesso**: 70%
 - **Dados Necessários**: CPF/CNPJ, Nome, Endereço completo, CEP, Cidade, Estado
-- **Processamento**: Imediato (geração do boleto)
-- **Código de Autorização**: Formato `BOL{6 dígitos}`
 
 ## 🗄️ Modelo de Dados
 
-### 📊 **Tabelas Principais**
+### 📊 **Tabela**
 
-#### **Transacoes**
+#### **Transações**
 - `Id` (UUID) - Identificador único
 - `UsuarioId` (UUID) - ID do usuário
 - `JogoId` (UUID) - ID do jogo
@@ -161,20 +139,6 @@ FGC_PAGAMENTOS/
 - `Observacoes` (String) - Observações da transação
 - `ErroProcessamento` (String) - Erro em caso de falha
 - `DataCriacao` (DateTime) - Data de criação
-
-## 🔄 Migração de SQL Server para PostgreSQL
-
-### ✅ **Mudanças Implementadas**
-- **Banco de Dados**: Migrado de SQL Server LocalDB para PostgreSQL (Supabase)
-- **Arquitetura**: Migrado de Minimal API para Controllers
-- **Dependências**: Atualizadas para suportar PostgreSQL
-- **Migrations**: Recriadas para PostgreSQL
-
-### 🔧 **Configurações Atualizadas**
-- **Connection String**: Configurada para Supabase
-- **DbContext**: Otimizado para PostgreSQL
-- **Controllers**: Implementados seguindo padrão REST
-- **Dependency Injection**: Configurado com ServiceCollectionExtensions
 
 ## 🐞 Logs e Monitoramento
 
@@ -194,35 +158,6 @@ FGC_PAGAMENTOS/
 ### ☁️ **Supabase**
 - Banco de dados PostgreSQL gerenciado
 - Migrations aplicadas automaticamente na inicialização
-- Conexão segura via SSL
+  
 
-### 🔧 **Configurações de Ambiente**
-- **Development**: Usa appsettings.Development.json
-- **Production**: Usa appsettings.json
-- **Connection String**: Configurada via Supabase
-
-## 📋 Status do Projeto
-
-### ✅ **Concluído**
-- [x] Migração para PostgreSQL (Supabase)
-- [x] Implementação de Controllers simplificados
-- [x] Configuração de Dependency Injection
-- [x] Migrations aplicadas no Supabase
-- [x] API funcionando com Swagger
-- [x] Logs estruturados com Serilog
-- [x] Suporte a pagamentos brasileiros (PIX, Cartão, Boleto)
-- [x] Simplificação máxima do microserviço
-- [x] Criação e processamento unificados em um único POST
-- [x] Remoção de campos desnecessários (moeda, tentativas, etc.)
-
-### 🔄 **Funcionalidades Simplificadas**
-- [x] CRUD de Transações simplificado
-- [x] Processamento de Pagamentos Brasileiros unificado
-- [x] Validações específicas por tipo de pagamento
-- [x] Códigos de autorização por tipo de pagamento
-- [x] Tratamento de Erros específicos
-- [x] Simulação de processamento com taxas de sucesso realistas
-- [x] Busca por usuário, jogo e período
-- [x] Atualização simples de status e observações
-
-**FCG Pagamentos** - Microserviço de Pagamentos | FIAP Cloud Games 2025
+Microserviço de Pagamentos | FIAP Cloud Games 2025
