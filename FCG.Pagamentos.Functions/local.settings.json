@@ -4,6 +4,5 @@
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "DefaultConnection": "Host=aws-1-us-east-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.elcvczlnnzbgcpsbowkg;Password=Fiap@1234;Ssl Mode=Require;Trust Server Certificate=true;",
-    "AzureWebJobsNotificationQueueConnection": "DefaultEndpointsProtocol=https;AccountName=stfcgfunctions;AccountKey=Q3rqArOLZIWBc8gMebLSSivI4qKDZmAZZMFdoNSGLmWx8qNBV8qIaVLGDV4k6l/XPWLMeswXB9Fc+AStvIYIuw==;EndpointSuffix=core.windows.net"
   }
 }
