@@ -21,11 +21,13 @@ public class PaymentProcessRequest
     [Required(ErrorMessage = "Tipo de pagamento é obrigatório")]
     public TipoPagamento TipoPagamento { get; set; }
 
-    // Dados específicos para cada tipo de pagamento (simplificado)
-    public string? DadosPagamento { get; set; } // JSON serializado com os dados específicos
+    public DadosCartaoRequest? DadosCartao { get; set; }
+    public DadosPIXRequest? DadosPIX { get; set; }
+    public DadosBoletoRequest? DadosBoleto { get; set; }
 
     public string? Observacoes { get; set; }
 }
+
 
 /// <summary>
 /// Modelo de resposta para processamento de pagamento
@@ -51,3 +53,29 @@ public class NotificationMessage
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
     public Dictionary<string, object>? DadosAdicionais { get; set; }
 }
+
+public class DadosCartaoRequest
+{
+    public string NumeroCartao { get; set; } = string.Empty;
+    public string NomeTitular { get; set; } = string.Empty;
+    public string DataValidade { get; set; } = string.Empty;
+    public string CVV { get; set; } = string.Empty;
+    public int Parcelas { get; set; } = 1;
+}
+
+public class DadosPIXRequest
+{
+    public string ChavePIX { get; set; } = string.Empty;
+}
+
+public class DadosBoletoRequest
+{
+    public string CpfCnpj { get; set; } = string.Empty;
+    public string NomePagador { get; set; } = string.Empty;
+    public string Endereco { get; set; } = string.Empty;
+    public string CEP { get; set; } = string.Empty;
+    public string Cidade { get; set; } = string.Empty;
+    public string Estado { get; set; } = string.Empty;
+}
+
+

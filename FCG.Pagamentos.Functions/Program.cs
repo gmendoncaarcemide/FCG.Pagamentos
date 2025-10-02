@@ -10,11 +10,9 @@ var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
     .ConfigureServices((context, services) =>
     {
-        // Configuração das camadas de aplicação (reutilizando a estrutura existente)
         services.AddPagamentosDbContext(context.Configuration);
         services.AddPagamentosService();
 
-        // Logging
         services.AddLogging(builder =>
         {
             builder.AddConsole();
