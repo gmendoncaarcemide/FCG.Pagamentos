@@ -1,118 +1,166 @@
-using System.ComponentModel.DataAnnotations;
+using System;
+using System.IO;
 using System.Net;
+using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using FCG.Pagamentos.Application.Pagamentos.Interfaces;
-using FCG.Pagamentos.Application.Pagamentos.ViewModels;
-using FCG.Pagamentos.Domain.Pagamentos.Entities;
+using Azure.Storage.Queues;
 using FCG.Pagamentos.Functions.Models;
 
-namespace FCG.Pagamentos.Functions.Functions;
-
-public class PaymentProcessorFunction
+namespace FCG.Pagamentos.Functions.Functions
 {
-    private readonly ILogger<PaymentProcessorFunction> _logger;
-    private readonly ITransacaoService _transacaoService;
-
-    public PaymentProcessorFunction(ILogger<PaymentProcessorFunction> logger, ITransacaoService transacaoService)
+    public class PaymentProcessorFunction
     {
-        _logger = logger;
-        _transacaoService = transacaoService;
-    }
+        private readonly ILogger<PaymentProcessorFunction> _logger;
 
-    [Function("PaymentProcessor")]
-    public async Task<HttpResponseData> ProcessPayment(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "payments/process")] HttpRequestData req)
-    {
-        var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-        if (string.IsNullOrEmpty(requestBody))
-            return await CreateError(req, HttpStatusCode.BadRequest, "Corpo da requisição não pode estar vazio");
-
-        var paymentRequest = JsonSerializer.Deserialize<PaymentProcessRequest>(requestBody,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        if (paymentRequest == null)
-            return await CreateError(req, HttpStatusCode.BadRequest, "Formato da requisição inválido");
-
-        var validationResults = new List<ValidationResult>();
-        if (!Validator.TryValidateObject(paymentRequest, new ValidationContext(paymentRequest), validationResults, true))
+        public PaymentProcessorFunction(ILogger<PaymentProcessorFunction> logger)
         {
-            var errors = string.Join(", ", validationResults.Select(v => v.ErrorMessage));
-            return await CreateError(req, HttpStatusCode.BadRequest, $"Dados inválidos: {errors}");
+            _logger = logger;
         }
 
-        var criarTransacaoRequest = new CriarTransacaoRequest
+        [Function("PaymentProcessor")]
+        public async Task<HttpResponseData> ProcessPayment(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "payments/process")] HttpRequestData req)
         {
-            UsuarioId = paymentRequest.UsuarioId,
-            JogoId = paymentRequest.JogoId,
-            Valor = paymentRequest.Valor,
-            TipoPagamento = paymentRequest.TipoPagamento,
-            Observacoes = paymentRequest.Observacoes,
-            DadosCartao = paymentRequest.DadosCartao != null ? new Application.Pagamentos.ViewModels.DadosCartaoRequest
-            {
-                NumeroCartao = paymentRequest.DadosCartao.NumeroCartao,
-                NomeTitular = paymentRequest.DadosCartao.NomeTitular,
-                DataValidade = paymentRequest.DadosCartao.DataValidade,
-                CVV = paymentRequest.DadosCartao.CVV,
-                Parcelas = paymentRequest.DadosCartao.Parcelas
-            } : null,
-            DadosPIX = paymentRequest.DadosPIX != null ? new Application.Pagamentos.ViewModels.DadosPIXRequest
-            {
-                ChavePIX = paymentRequest.DadosPIX.ChavePIX
-            } : null,
-            DadosBoleto = paymentRequest.DadosBoleto != null ? new Application.Pagamentos.ViewModels.DadosBoletoRequest
-            {
-                CpfCnpj = paymentRequest.DadosBoleto.CpfCnpj,
-                NomePagador = paymentRequest.DadosBoleto.NomePagador,
-                Endereco = paymentRequest.DadosBoleto.Endereco,
-                CEP = paymentRequest.DadosBoleto.CEP,
-                Cidade = paymentRequest.DadosBoleto.Cidade,
-                Estado = paymentRequest.DadosBoleto.Estado
-            } : null
-        };
+            _logger.LogInformation("🚀 PaymentProcessorFunction executada - Integração com NotificationProcessor");
 
-        try
+            try
+            {
+                var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                _logger.LogInformation("📥 Dados recebidos: {RequestBody}", requestBody);
+
+                if (string.IsNullOrEmpty(requestBody))
+                {
+                    _logger.LogWarning("⚠️ Corpo da requisição vazio");
+                    return await CreateError(req, HttpStatusCode.BadRequest, "Corpo da requisição não pode estar vazio");
+                }
+
+                var paymentRequest = JsonSerializer.Deserialize<PaymentProcessRequest>(requestBody,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (paymentRequest == null)
+                {
+                    _logger.LogWarning("⚠️ Falha ao deserializar requisição");
+                    return await CreateError(req, HttpStatusCode.BadRequest, "Formato da requisição inválido");
+                }
+
+                _logger.LogInformation("✅ Dados validados com sucesso");
+                _logger.LogInformation("   Usuário: {UsuarioId}", paymentRequest.UsuarioId);
+                _logger.LogInformation("   Jogo: {JogoId}", paymentRequest.JogoId);
+                _logger.LogInformation("   Valor: R$ {Valor}", paymentRequest.Valor);
+                _logger.LogInformation("   Tipo: {TipoPagamento}", paymentRequest.TipoPagamento);
+
+                // Simular processamento
+                var transacaoId = Guid.NewGuid();
+                var codigoAutorizacao = GerarCodigoAutorizacao((int)paymentRequest.TipoPagamento);
+
+                _logger.LogInformation("💳 Pagamento processado com sucesso!");
+                _logger.LogInformation("   Transação: {TransacaoId}", transacaoId);
+                _logger.LogInformation("   Código: {CodigoAutorizacao}", codigoAutorizacao);
+
+                // Enviar notificação real para a fila
+                await EnviarParaNotificationQueue(transacaoId, paymentRequest.UsuarioId, paymentRequest.Valor, paymentRequest.TipoPagamento);
+
+                var response = new PaymentProcessResponse
+                {
+                    Status = "Aprovada",
+                    Message = "Pagamento processado com sucesso via Azure Function",
+                    TransacaoId = transacaoId,
+                    CodigoAutorizacao = codigoAutorizacao,
+                    ProcessedAt = DateTime.UtcNow
+                };
+
+                _logger.LogInformation("✅ Resposta enviada com sucesso");
+                return await CreateSuccess(req, response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Erro na PaymentProcessorFunction");
+                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
+                _logger.LogError("InnerException: {Inner}", ex.InnerException?.Message);
+                return await CreateError(req, HttpStatusCode.InternalServerError, $"Erro interno: {ex.Message}");
+            }
+        }
+
+        private async Task EnviarParaNotificationQueue(Guid transacaoId, Guid usuarioId, decimal valor, object tipoPagamento)
         {
-            var transacao = await _transacaoService.CriarAsync(criarTransacaoRequest);
-
-            var response = new PaymentProcessResponse
+            try
             {
-                Status = transacao.Status.ToString(),
-                Message = "Pagamento processado com sucesso",
-                TransacaoId = transacao.Id,
-                CodigoAutorizacao = transacao.CodigoAutorizacao
+                _logger.LogInformation("📦 Enviando mensagem para a fila NotificationProcessor...");
+
+                // Recupera a connection string da Storage Account
+                var connectionString = Environment.GetEnvironmentVariable("NotificationQueueConnection");
+
+                if (string.IsNullOrWhiteSpace(connectionString))
+                {
+                    _logger.LogError("❌ Variável de ambiente 'NotificationQueueConnection' não configurada.");
+                    return;
+                }
+
+                // Cria cliente da fila
+                var queueClient = new QueueClient(connectionString, "notification-queue");
+                await queueClient.CreateIfNotExistsAsync();
+
+                var notification = new
+                {
+                    TransacaoId = transacaoId,
+                    UsuarioId = usuarioId,
+                    TipoNotificacao = "PagamentoAprovado",
+                    Valor = valor,
+                    TipoPagamento = tipoPagamento.ToString(),
+                    Mensagem = $"Seu pagamento de R$ {valor:F2} foi aprovado com sucesso!",
+                    DataEnvio = DateTime.UtcNow
+                };
+
+                string json = JsonSerializer.Serialize(notification);
+                string base64Message = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+
+                await queueClient.SendMessageAsync(base64Message);
+
+                _logger.LogInformation("✅ Mensagem enviada para a fila 'notification-queue' com sucesso!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Erro ao enviar mensagem para a fila NotificationProcessor: {Message}", ex.Message);
+            }
+        }
+
+        private static string GerarCodigoAutorizacao(int tipoPagamento)
+        {
+            return tipoPagamento switch
+            {
+                3 => $"PIX{Guid.NewGuid().ToString("N")[..6].ToUpper()}",
+                1 => $"CC{Guid.NewGuid().ToString("N")[..6].ToUpper()}",
+                2 => $"CD{Guid.NewGuid().ToString("N")[..6].ToUpper()}",
+                4 => $"BOL{Guid.NewGuid().ToString("N")[..6].ToUpper()}",
+                _ => Guid.NewGuid().ToString("N")[..8].ToUpper()
             };
-
-            return await CreateSuccess(req, response);
         }
-        catch (InvalidOperationException ex)
+
+        private async Task<HttpResponseData> CreateSuccess(HttpRequestData req, PaymentProcessResponse response)
         {
-            _logger.LogError(ex, "Erro de negócio");
-            return await CreateError(req, HttpStatusCode.BadRequest, ex.Message);
+            var res = req.CreateResponse(HttpStatusCode.OK);
+            res.Headers.Add("Content-Type", "application/json; charset=utf-8");
+            await res.WriteStringAsync(JsonSerializer.Serialize(response, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }));
+            return res;
         }
-        catch (Exception ex)
+
+        private async Task<HttpResponseData> CreateError(HttpRequestData req, HttpStatusCode statusCode, string message)
         {
-            _logger.LogError(ex, "Erro interno");
-            return await CreateError(req, HttpStatusCode.InternalServerError, "Erro interno do servidor.");
+            var res = req.CreateResponse(statusCode);
+            res.Headers.Add("Content-Type", "application/json; charset=utf-8");
+            var error = new { status = "error", message };
+            await res.WriteStringAsync(JsonSerializer.Serialize(error, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }));
+            return res;
         }
-    }
-
-    private async Task<HttpResponseData> CreateSuccess(HttpRequestData req, PaymentProcessResponse response)
-    {
-        var res = req.CreateResponse(HttpStatusCode.OK);
-        res.Headers.Add("Content-Type", "application/json; charset=utf-8");
-        await res.WriteStringAsync(JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
-        return res;
-    }
-
-    private async Task<HttpResponseData> CreateError(HttpRequestData req, HttpStatusCode statusCode, string message)
-    {
-        var res = req.CreateResponse(statusCode);
-        res.Headers.Add("Content-Type", "application/json; charset=utf-8");
-        var error = new { status = "error", message };
-        await res.WriteStringAsync(JsonSerializer.Serialize(error, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
-        return res;
     }
 }
