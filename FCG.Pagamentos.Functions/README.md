@@ -94,8 +94,6 @@ Contém variáveis de ambiente utilizadas apenas no ambiente local.
 - `DefaultConnection`: conexão com o banco (PostgreSQL/Supabase).
 - `AzureWebJobsNotificationQueueConnection`: conexão com o Storage Account que hospeda a fila `notification-queue`.
 
-> ⚠️ **Atenção:** Nunca publique connection strings sensíveis em repositórios públicos.
-
 ---
 
 ### 4. **README_FUNCTIONS.md**
