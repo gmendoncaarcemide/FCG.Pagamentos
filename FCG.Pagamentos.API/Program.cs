@@ -21,6 +21,9 @@ builder.Services.AddPagamentosDbContext(builder.Configuration);
 builder.Services.AddPagamentosService();
 builder.Services.AddControllers();
 
+builder.Services.AddHttpClient<FCG.Pagamentos.Application.Pagamentos.Services.IAzureFunctionService, 
+    FCG.Pagamentos.Application.Pagamentos.Services.AzureFunctionService>();
+
 var app = builder.Build();
 
 app.UseSwagger();

@@ -8,15 +8,16 @@ namespace FCG.Pagamentos.Application.Pagamentos.Services;
 public class TransacaoService : ITransacaoService
 {
     private readonly ITransacaoRepository _transacaoRepository;
+    private readonly IAzureFunctionService _azureFunctionService;
 
-    public TransacaoService(ITransacaoRepository transacaoRepository)
+    public TransacaoService(ITransacaoRepository transacaoRepository, IAzureFunctionService azureFunctionService)
     {
         _transacaoRepository = transacaoRepository;
+        _azureFunctionService = azureFunctionService;
     }
 
     public async Task<TransacaoResponse> CriarAsync(CriarTransacaoRequest request)
     {
-        // Valida dados específicos do tipo de pagamento
         ValidarDadosPagamento(request.TipoPagamento, request);
 
         var transacao = new Transacao
@@ -49,6 +50,10 @@ public class TransacaoService : ITransacaoService
         }
 
         var transacaoCriada = await _transacaoRepository.AdicionarAsync(transacao);
+        
+        // Chamar Azure Functions automaticamente
+        await ChamarAzureFunctionsAsync(transacaoCriada, request);
+        
         return MapearParaResponse(transacaoCriada);
     }
 
@@ -190,6 +195,44 @@ public class TransacaoService : ITransacaoService
             TipoPagamento.Boleto => "Erro na geração do boleto - Dados inválidos",
             _ => "Erro no processamento do pagamento"
         };
+    }
+
+    private async Task ChamarAzureFunctionsAsync(Transacao transacao, CriarTransacaoRequest request)
+    {
+        try
+        {
+            // 1. Chamar PaymentProcessorFunction (opcional - para demonstração)
+            var paymentData = new
+            {
+                UsuarioId = transacao.UsuarioId,
+                JogoId = transacao.JogoId,
+                Valor = transacao.Valor,
+                TipoPagamento = (int)transacao.TipoPagamento,
+                Observacoes = transacao.Observacoes,
+                DadosCartao = request.DadosCartao,
+                DadosPIX = request.DadosPIX,
+                DadosBoleto = request.DadosBoleto
+            };
+
+            await _azureFunctionService.ChamarPaymentProcessorFunctionAsync(paymentData);
+
+            // 2. Enviar notificação baseada no status
+            var statusString = transacao.Status.ToString();
+            var tipoPagamentoString = transacao.TipoPagamento.ToString();
+            
+            await _azureFunctionService.EnviarNotificacaoAsync(
+                transacao.Id, 
+                transacao.UsuarioId, 
+                statusString, 
+                transacao.Valor, 
+                tipoPagamentoString);
+        }
+        catch (Exception ex)
+        {
+            // Log do erro, mas não falha a transação
+            // Em produção, usar um logger adequado
+            Console.WriteLine($"Erro ao chamar Azure Functions: {ex.Message}");
+        }
     }
 
     private static TransacaoResponse MapearParaResponse(Transacao transacao)
