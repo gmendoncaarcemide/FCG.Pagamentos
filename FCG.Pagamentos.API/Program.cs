@@ -2,6 +2,10 @@ using FCG.Pagamentos.Infrastructure;
 using FCG.Pagamentos.Application;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using FCG.Pagamentos.Application.Messaging.Extensions;
+using FCG.Pagamentos.Application.Messaging.Interfaces;
+using FCG.Pagamentos.Application.Messaging.Events;
+using FCG.Pagamentos.Application.EventHandlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +23,12 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddPagamentosDbContext(builder.Configuration);
 builder.Services.AddPagamentosService();
+
+builder.Services.AddRabbitMQMessaging(builder.Configuration);
+
+builder.Services.AddScoped<IEventHandler<PagamentoAprovadoEvent>, PagamentoAprovadoEventHandler>();
+builder.Services.AddScoped<IEventHandler<PagamentoRecusadoEvent>, PagamentoRecusadoEventHandler>();
+
 builder.Services.AddControllers();
 
 builder.Services.AddHttpClient<FCG.Pagamentos.Application.Pagamentos.Services.IAzureFunctionService, 
@@ -35,6 +45,10 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PagamentosDbContext>();
     db.Database.Migrate();
+    
+    var eventBus = scope.ServiceProvider.GetRequiredService<IEventBus>();
+    eventBus.Subscribe<PagamentoAprovadoEvent, PagamentoAprovadoEventHandler>();
+    eventBus.Subscribe<PagamentoRecusadoEvent, PagamentoRecusadoEventHandler>();
 }
 
 app.Run(); 

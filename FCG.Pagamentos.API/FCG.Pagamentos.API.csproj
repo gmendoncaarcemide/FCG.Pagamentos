@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\FCG.Pagamentos.Application\FCG.Pagamentos.Application.csproj" />
     <ProjectReference Include="..\FCG.Pagamentos.Infrastructure\FCG.Pagamentos.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\FCG.Shared.Messaging\FCG.Shared.Messaging.csproj" />
   </ItemGroup>
 
 </Project>
