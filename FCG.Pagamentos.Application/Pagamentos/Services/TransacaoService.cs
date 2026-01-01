@@ -2,6 +2,8 @@ using FCG.Pagamentos.Application.Pagamentos.Interfaces;
 using FCG.Pagamentos.Application.Pagamentos.ViewModels;
 using FCG.Pagamentos.Domain.Pagamentos.Entities;
 using FCG.Pagamentos.Domain.Pagamentos.Interfaces;
+using FCG.Pagamentos.Application.Messaging.Interfaces;
+using FCG.Pagamentos.Application.Messaging.Events;
 
 namespace FCG.Pagamentos.Application.Pagamentos.Services;
 
@@ -9,11 +11,13 @@ public class TransacaoService : ITransacaoService
 {
     private readonly ITransacaoRepository _transacaoRepository;
     private readonly IAzureFunctionService _azureFunctionService;
+    private readonly IEventBus _eventBus;
 
-    public TransacaoService(ITransacaoRepository transacaoRepository, IAzureFunctionService azureFunctionService)
+    public TransacaoService(ITransacaoRepository transacaoRepository, IAzureFunctionService azureFunctionService, IEventBus eventBus)
     {
         _transacaoRepository = transacaoRepository;
         _azureFunctionService = azureFunctionService;
+        _eventBus = eventBus;
     }
 
     public async Task<TransacaoResponse> CriarAsync(CriarTransacaoRequest request)
@@ -50,6 +54,45 @@ public class TransacaoService : ITransacaoService
         }
 
         var transacaoCriada = await _transacaoRepository.AdicionarAsync(transacao);
+        
+        // Publicar evento de pagamento iniciado
+        var pagamentoIniciadoEvent = new PagamentoIniciadoEvent
+        {
+            TransacaoId = transacaoCriada.Id,
+            UsuarioId = transacaoCriada.UsuarioId,
+            JogoId = transacaoCriada.JogoId,
+            Valor = transacaoCriada.Valor,
+            TipoPagamento = transacaoCriada.TipoPagamento.ToString(),
+            DataInicio = DateTime.UtcNow
+        };
+        await _eventBus.PublishAsync(pagamentoIniciadoEvent);
+        
+        // Publicar evento baseado no status
+        if (transacaoCriada.Status == StatusTransacao.Aprovada)
+        {
+            var pagamentoAprovadoEvent = new PagamentoAprovadoEvent
+            {
+                TransacaoId = transacaoCriada.Id,
+                UsuarioId = transacaoCriada.UsuarioId,
+                JogoId = transacaoCriada.JogoId,
+                Valor = transacaoCriada.Valor,
+                CodigoAutorizacao = transacaoCriada.CodigoAutorizacao ?? string.Empty,
+                DataAprovacao = transacaoCriada.DataConfirmacao ?? DateTime.UtcNow
+            };
+            await _eventBus.PublishAsync(pagamentoAprovadoEvent);
+        }
+        else if (transacaoCriada.Status == StatusTransacao.Recusada)
+        {
+            var pagamentoRecusadoEvent = new PagamentoRecusadoEvent
+            {
+                TransacaoId = transacaoCriada.Id,
+                UsuarioId = transacaoCriada.UsuarioId,
+                JogoId = transacaoCriada.JogoId,
+                Motivo = transacaoCriada.ErroProcessamento ?? "Pagamento recusado",
+                DataRecusa = DateTime.UtcNow
+            };
+            await _eventBus.PublishAsync(pagamentoRecusadoEvent);
+        }
         
         // Chamar Azure Functions automaticamente
         await ChamarAzureFunctionsAsync(transacaoCriada, request);
