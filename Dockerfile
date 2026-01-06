@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copia apenas os projetos necessários do monorepo
-COPY FCG.Pagamentos/ ./FCG.Pagamentos/
+COPY . ./FCG.Pagamentos/
 
 # Restaura e publica a API
 RUN dotnet restore "FCG.Pagamentos/FCG.Pagamentos.API/FCG.Pagamentos.API.csproj"
