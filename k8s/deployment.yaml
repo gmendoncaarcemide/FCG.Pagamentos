@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fcg-pagamentos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fcg-pagamentos
+  template:
+    metadata:
+      labels:
+        app: fcg-pagamentos
+    spec:
+      containers:
+      - name: fcg-jogos
+        image: fabriciorosanet/fcg-pagamentos-api:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        args:
+          - "--ASPNETCORE_ENVIRONMENT=Production"
+          - "--RabbitMQ__HostName=toucan-01.lmq.cloudamqp.com"
+          - "--RabbitMQ__Port=5671"
+          - "--RabbitMQ__UserName=evqzzejc"
+          - "--RabbitMQ__Password=k9lXTGOnuZ3j_5eVkKisS9iWa32lbf0j4"
+          - "--RabbitMQ__VirtualHost=evqzzejc"
+          - "--RabbitMQ__Ssl__Enabled=true"
+          - "--RabbitMQ__Ssl__ServerName=toucan-01.lmq.cloudamqp.com"
+        livenessProbe:
+          httpGet:
+            path: /swagger/index.html
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /swagger/index.html
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
