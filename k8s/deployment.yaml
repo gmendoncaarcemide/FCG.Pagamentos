@@ -12,6 +12,16 @@ spec:
       labels:
         app: fcg-pagamentos
     spec:
+      # Configuração DNS para resolver hostnames externos (como CloudAMQP)
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - "8.8.8.8"
+          - "8.8.4.4"
+        searches:
+          - "default.svc.cluster.local"
+          - "svc.cluster.local"
+          - "cluster.local"
       containers:
       - name: fcg-jogos
         image: fabriciorosanet/fcg-pagamentos-api:latest
@@ -26,13 +36,13 @@ spec:
             memory: "256Mi"
         args:
           - "--ASPNETCORE_ENVIRONMENT=Production"
-          - "--RabbitMQ__HostName=toucan-01.lmq.cloudamqp.com"
+          - "--RabbitMQ__HostName=toucan.lmq.cloudamqp.com"
           - "--RabbitMQ__Port=5671"
-          - "--RabbitMQ__UserName=evqzzejc"
-          - "--RabbitMQ__Password=k9lXTGOnuZ3j_5eVkKisS9iWa32lbf0j4"
-          - "--RabbitMQ__VirtualHost=evqzzejc"
-          - "--RabbitMQ__Ssl__Enabled=true"
-          - "--RabbitMQ__Ssl__ServerName=toucan-01.lmq.cloudamqp.com"
+          - "--RabbitMQ__UserName=evqzezjc"
+          - "--RabbitMQ__Password=k9IXTGOnuZ3i_5eVKkiS9iWa32Ibf0j4"
+          - "--RabbitMQ__VirtualHost=evqzezjc"
+          - "--RabbitMQ__UseSsl=true"
+          - "--RabbitMQ__SslServerName=toucan.lmq.cloudamqp.com"
         livenessProbe:
           httpGet:
             path: /swagger/index.html
