@@ -7,6 +7,8 @@ public class RabbitMQSettings
     public string UserName { get; set; } = "guest";
     public string Password { get; set; } = "guest";
     public string VirtualHost { get; set; } = "/";
+    public bool UseSsl { get; set; } = false;
+    public string? SslServerName { get; set; }
     public int RetryCount { get; set; } = 3;
     public int RetryDelayMilliseconds { get; set; } = 1000;
 }

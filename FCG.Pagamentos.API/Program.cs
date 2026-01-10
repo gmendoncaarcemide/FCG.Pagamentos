@@ -9,6 +9,12 @@ using FCG.Pagamentos.Application.EventHandlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Application Insights APM
+builder.Services.AddApplicationInsightsTelemetry(options =>
+{
+    options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+});
+
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .WriteTo.File("logs/pagamentos-api-.txt", rollingInterval: RollingInterval.Day)
